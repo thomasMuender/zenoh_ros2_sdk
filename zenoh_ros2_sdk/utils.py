@@ -215,7 +215,8 @@ def _parse_msg_definition(msg_def: str) -> List[Dict]:
     Only data fields are returned; constants are excluded so that the type hash
     matches ROS2 (type description includes only struct members, not const declarations).
     Constant vs field rule matches rosidl_adapter/parser.py: a line is a constant iff
-    the remainder after the type token contains '=' (e.g. "type NAME = value" or "type NAME=value").
+    '=' appears anywhere in the tokens following the type (e.g. "type NAME = value",
+    "type NAME=value", or "type NAME =value" with irregular spacing).
     See: deps/rosidl/rosidl_adapter/rosidl_adapter/parser.py parse_message_string(),
     CONSTANT_SEPARATOR and MessageSpecification(fields=..., constants=...).
     """
@@ -240,12 +241,13 @@ def _parse_msg_definition(msg_def: str) -> List[Dict]:
         field_type = parts[0]
         field_name = parts[1]
 
-        # Skip constants (format: type CONSTANT_NAME=value or type CONSTANT_NAME = value).
+        # AI Generated Block Start - Model: Claude Sonnet 5 - Date: 2026-09-18 - Block ID: zenoh-utils-const-fix-001
+        # Skip constants. rosidl_adapter accepts '=' anywhere after the type token, with or
+        # without surrounding whitespace (e.g. "NAME=1", "NAME = 1", "NAME =1", "NAME= 1").
         # Constants must not be included in the type hash calculation (ROS2 type description excludes them).
-        if '=' in field_name:
+        if any('=' in token for token in parts[1:]):
             continue
-        if len(parts) >= 3 and parts[2] == '=':
-            continue
+        # AI Generated Block End - Model: Claude Sonnet 5 - Date: 2026-09-18 - Block ID: zenoh-utils-const-fix-001
 
         # Check for array/sequence notation
         is_array = False
